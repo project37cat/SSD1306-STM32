@@ -109,7 +109,7 @@ void oled_clear(void); //clear screen
 void oled_update(void); //write buffer to screen
 
 void oled_char(uint8_t x, uint8_t y, uint8_t sign);  //print a character  //x: 0..120 //y: 0..7
-void oled_string(uint8_t x, uint8_t y, char *str);   //print a string  //x: 0..120 //y: 0..7
+void oled_print(uint8_t x, uint8_t y, char *str);    //print a string  //x: 0..120 //y: 0..7
 
 void oled_pixel(uint8_t h, uint8_t y);  //draw pixel  //x: 0..127  //y: 0..63
 void oled_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2); //draw line //x: 0..127  //y: 0..63
@@ -118,148 +118,148 @@ void oled_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2); //draw line //x:
 
 //-----------------------------------------------------------------------------
 void oled_write(uint8_t mode, uint8_t data) //mode: 1-data, 0-command
-	{
-	(mode) ? DC_H : DC_L;  //data/command
+    {
+    (mode) ? DC_H : DC_L;  //data/command
 
-	CS_L; //chip select in the active state
+    CS_L; //chip select in the active state
 
-	for(uint8_t k=0x80; k; k>>=1) //send byte
-		{
-		(data & k) ? DAT_H : DAT_L;
-		SCK_H; //on rising edge of SCLK
-		SCK_L;
-		}
+    for(uint8_t k=0x80; k; k>>=1) //send byte
+        {
+        (data & k) ? DAT_H : DAT_L;
+        SCK_H; //on rising edge of SCLK
+        SCK_L;
+        }
 
-	CS_H;
-	}
+    CS_H;
+    }
 
 
 //-----------------------------------------------------------------------------
 void oled_init(void) //init display
-	{
-	SCK_L; //sck line low
-	CS_H;  //chip select inactive
+    {
+    SCK_L; //sck line low
+    CS_H;  //chip select inactive
 
-	RST_L; //display chip reset
-	OLED_DELAY;
-	RST_H;
+    RST_L; //display chip reset
+    OLED_DELAY;
+    RST_H;
 
-	for (uint8_t i=0; i<sizeof init; i++) oled_write(0, init[i]); //init
-	}
+    for(uint8_t i=0; i<sizeof init; i++) oled_write(0, init[i]); //init
+    }
 
 
 //-----------------------------------------------------------------------------
 void oled_clear(void) //clear buffer
-	{
-	for(uint16_t x=0; x<BUFF_SIZE; x++) scrBuff[x]=0;
-	}
+    {
+    for(uint16_t x=0; x<BUFF_SIZE; x++) scrBuff[x]=0;
+    }
 
 
 //-----------------------------------------------------------------------------
 void oled_update(void) //write buffer to screen
-	{
-	oled_write(0,0x21); //set column address
-	oled_write(0,0); //start address
-	oled_write(0,127); //end address
+    {
+    oled_write(0,0x21); //set column address
+    oled_write(0,0); //start address
+    oled_write(0,127); //end address
 
-	oled_write(0,0x22); //set page address
-	oled_write(0,0);
-	oled_write(0,7);
+    oled_write(0,0x22); //set page address
+    oled_write(0,0);
+    oled_write(0,7);
 
-	for(uint16_t x=0; x<BUFF_SIZE; x++) oled_write(1,scrBuff[x]);  //write
-	}
+    for(uint16_t x=0; x<BUFF_SIZE; x++) oled_write(1,scrBuff[x]);  //write
+    }
 
 
 //-----------------------------------------------------------------------------
 void oled_char(uint8_t x, uint8_t y, uint8_t sign)  //x: 0..120 //y: 0..7
-	{
-	if(x<=120 && y<8)
-		{
-		if(sign<32 || sign>127) sign=128; //filling for invalid characters
-		for(uint8_t k=0; k<5; k++) scrBuff[128*y+x+k] = font[5*(sign-32)+k];
-		scrBuff[128*y+x+5]=0x00; //space between chars
-		}
-	}
+    {
+    if(x<=120 && y<8)
+        {
+        if(sign<32 || sign>127) sign=128; //filling for invalid characters
+        for(uint8_t k=0; k<5; k++) scrBuff[128*y+x+k] = font[5*(sign-32)+k];
+        scrBuff[128*y+x+5]=0x00; //space between chars
+        }
+    }
 
 
 //-----------------------------------------------------------------------------
 void oled_print(uint8_t x, uint8_t y, char *str)  //0..120 //0..7
-	{
-	while(*str) //write
-		{
-		oled_char(x, y, *str++);
-		x+=6;
-		}
-	}
+    {
+    while(*str) //write
+        {
+        oled_char(x, y, *str++);
+        x+=6;
+        }
+    }
 
 
 //-----------------------------------------------------------------------------
-void oled_pixel(uint8_t x, uint8_t y) //x: 0..127  //y: 0..63  //ON pixel
-	{
-	if(x<=127 && y<=63) BIT_SET(scrBuff[x+128*(y/8)], y%8);
-	}
+void oled_pixel(uint8_t x, uint8_t y) //x: 0..127  //y: 0..63
+    {
+    if(x<=127 && y<=63) BIT_SET(scrBuff[x+128*(y/8)], y%8);
+    }
 
 
 //-----------------------------------------------------------------------------
 void oled_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) //x: 0..127  //y: 0..63
-	{
-	int16_t P;
+    {
+    int16_t P;
 
-	int8_t x = x1;
-	int8_t y = y1;
+    int8_t x = x1;
+    int8_t y = y1;
 
-	int8_t dx = abs((int8_t)(x2-x1));
-	int8_t dy = abs((int8_t)(y2-y1));
+    int8_t dx = abs((int8_t)(x2-x1));
+    int8_t dy = abs((int8_t)(y2-y1));
 
-	int8_t addx, addy;
+    int8_t addx, addy;
 
-	if(x1>x2) addx=-1;
-	else addx=1;
+    if(x1>x2) addx=-1;
+    else addx=1;
 
-	if(y1>y2) addy=-1;
-	else addy=1;
+    if(y1>y2) addy=-1;
+    else addy=1;
 
-	if(dx>=dy)
-		{
-		P=2*dy-dx;
+    if(dx>=dy)
+        {
+        P=2*dy-dx;
 
-		for(uint8_t i=0; i<=dx; ++i)
-			{
-			oled_pixel(x, y);
+        for(uint8_t i=0; i<=dx; ++i)
+            {
+            oled_pixel(x, y);
 
-			if(P<0)
-				{
-				P+=2*dy;
-				x+=addx;
-				}
-			else
-				{
-				P+=2*dy-2*dx;
-				x+=addx;
-				y+=addy;
-				}
-			}
-		}
-	else
-		{
-		P=2*dx-dy;
+            if(P<0)
+                {
+                P+=2*dy;
+                x+=addx;
+                }
+            else
+                {
+                P+=2*dy-2*dx;
+                x+=addx;
+                y+=addy;
+                }
+            }
+        }
+    else
+        {
+        P=2*dx-dy;
 
-		for(uint8_t i=0; i<=dy; ++i)
-			{
-			oled_pixel(x, y);
+        for(uint8_t i=0; i<=dy; ++i)
+            {
+            oled_pixel(x, y);
 
-			if(P<0)
-				{
-				P+=2*dx;
-				y+=addy;
-				}
-			else
-				{
-				P+=2*dx-2*dy;
-				x+=addx;
-				y+=addy;
-				}
-			}
-		}
-	}
+            if(P<0)
+                {
+                P+=2*dx;
+                y+=addy;
+                }
+            else
+                {
+                P+=2*dx-2*dy;
+                x+=addx;
+                y+=addy;
+                }
+            }
+        }
+    }
 
